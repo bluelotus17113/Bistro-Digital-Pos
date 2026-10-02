@@ -290,7 +290,7 @@ async function viewOrder(isCurrent, orderId) {
   const $side = h('aside', { class: 'order-side' });
   const $cartBar = h('button', { class: 'cart-bar', onclick: () => $root.classList.add('show-ticket') });
   const $search = h('input', {
-    type: 'search', placeholder: 'Buscar en todo el menú', 'aria-label': 'Buscar producto',
+    type: 'search', placeholder: 'Buscar por nombre o ingrediente', 'aria-label': 'Buscar producto',
     oninput: (e) => { query = e.target.value.trim().toLowerCase(); renderProducts(); },
   });
 
@@ -373,12 +373,12 @@ async function viewOrder(isCurrent, orderId) {
     const counts = new Map();
     for (const it of order.items) counts.set(it.product_id, (counts.get(it.product_id) || 0) + it.qty);
     const list = query
-      ? boot.products.filter((p) => p.name.toLowerCase().includes(query))
+      ? boot.products.filter((p) => `${p.name} ${p.description || ''}`.toLowerCase().includes(query))
       : boot.products.filter((p) => p.category_id === category);
     fill($products, list.length
       ? list.map((p) => h('button', { class: 'product', onclick: () => addProduct(p) },
         counts.get(p.id) && h('span', { class: 'badge num' }, counts.get(p.id)),
-        h('span', { class: 'pname' }, p.name),
+        h('span', null, h('span', { class: 'pname' }, p.name), p.description && h('span', { class: 'pdesc' }, p.description)),
         h('span', { class: 'pprice num' }, money(p.price))))
       : h('p', { class: 'empty' }, query
         ? `Ningún producto coincide con "${query}".`
@@ -430,7 +430,7 @@ async function viewOrder(isCurrent, orderId) {
   function renderAll() { renderTop(); renderProducts(); renderSide(); }
 
   $root.append(
-    h('div', { class: 'order-menu' }, $top, h('div', { class: 'search' }, $search), $cats, $products),
+    h('div', { class: 'order-menu' }, $top, h('div', { class: 'search' }, $search), $cats, h('div', { class: 'products-scroll' }, $products)),
     $side, $cartBar);
   renderCats();
   renderAll();
@@ -675,6 +675,7 @@ async function viewMenu(isCurrent) {
       fields: [
         { name: 'name', label: 'Nombre', value: product?.name, maxlength: 60 },
         { name: 'price', label: 'Precio en pesos', type: 'number', value: product?.price, hint: state.boot.settings.tax_included ? 'Con el impuesto ya incluido' : 'Sin impuesto' },
+        { name: 'description', label: 'Descripción', hint: 'Opcional. Ingredientes o lo que incluye', value: product?.description, maxlength: 160 },
         { name: 'category_id', label: 'Categoría', type: 'select', value: product?.category_id ?? categoryId, options: catOptions },
       ],
       submitLabel: product ? 'Guardar cambios' : 'Agregar producto',
@@ -708,7 +709,7 @@ async function viewMenu(isCurrent) {
             h('button', { class: 'btn small quiet', onclick: () => remove(`/api/categories/${c.id}`, `Quitar la categoría ${c.name}`) }, 'Quitar')),
           h('div', { class: 'admin-list' }, products.length
             ? products.map((p) => h('div', { class: 'admin-row' },
-              h('span', { class: 'grow' }, p.name),
+              h('span', { class: 'grow' }, p.name, p.description && h('div', { class: 'muted' }, p.description)),
               h('strong', { class: 'num' }, money(p.price)),
               h('button', { class: 'btn small quiet', onclick: () => productForm(p) }, 'Editar'),
               h('button', { class: 'btn small quiet', onclick: () => remove(`/api/products/${p.id}`, `Quitar ${p.name} del menú`, 'Las ventas ya registradas con este producto no cambian.') }, 'Quitar')))

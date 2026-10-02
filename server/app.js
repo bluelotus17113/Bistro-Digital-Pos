@@ -211,7 +211,8 @@ function createApp(db) {
       zones: db.prepare('SELECT * FROM zones WHERE active = 1 ORDER BY sort, id').all(),
       tables: db.prepare('SELECT * FROM tables WHERE active = 1 ORDER BY id').all(),
       categories: db.prepare('SELECT * FROM categories WHERE active = 1 ORDER BY sort, id').all(),
-      products: db.prepare('SELECT * FROM products WHERE active = 1 ORDER BY name COLLATE NOCASE').all(),
+      // En el orden de la carta impresa, que es el que el personal ya conoce.
+      products: db.prepare('SELECT * FROM products WHERE active = 1 ORDER BY id').all(),
       methods: METHODS,
     });
   });
@@ -341,21 +342,24 @@ function createApp(db) {
       categoryId,
       name: text(body?.name, 'el nombre del producto', { max: 60 }),
       price: positiveInt(body?.price, 'El precio', { min: 0, max: 100000000 }),
+      description: text(body?.description, 'La descripción', { required: false, max: 160 }),
     };
   }
 
   app.post('/api/products', (req, res) => {
     const p = productBody(req.body);
-    const id = db.prepare('INSERT INTO products (category_id, name, price) VALUES (?, ?, ?)').run(p.categoryId, p.name, p.price).lastInsertRowid;
-    res.status(201).json({ id: Number(id), category_id: p.categoryId, name: p.name, price: p.price, active: 1 });
+    const id = db.prepare('INSERT INTO products (category_id, name, price, description) VALUES (?, ?, ?, ?)')
+      .run(p.categoryId, p.name, p.price, p.description).lastInsertRowid;
+    res.status(201).json({ id: Number(id), category_id: p.categoryId, name: p.name, price: p.price, description: p.description, active: 1 });
   });
 
   app.put('/api/products/:id', (req, res) => {
     const id = idParam(req);
     const p = productBody(req.body);
-    const r = db.prepare('UPDATE products SET category_id = ?, name = ?, price = ? WHERE id = ? AND active = 1').run(p.categoryId, p.name, p.price, id);
+    const r = db.prepare('UPDATE products SET category_id = ?, name = ?, price = ?, description = ? WHERE id = ? AND active = 1')
+      .run(p.categoryId, p.name, p.price, p.description, id);
     if (!r.changes) throw new HttpError(404, 'Ese producto no existe.');
-    res.json({ id, category_id: p.categoryId, name: p.name, price: p.price });
+    res.json({ id, category_id: p.categoryId, name: p.name, price: p.price, description: p.description });
   });
 
   app.delete('/api/products/:id', (req, res) => {

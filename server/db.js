@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
+const { MENU, ZONES } = require('./seed');
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS settings (
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS products (
   category_id INTEGER NOT NULL REFERENCES categories(id),
   name TEXT NOT NULL,
   price INTEGER NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
   active INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS orders (
@@ -83,52 +85,16 @@ CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
 `;
 
 const DEFAULT_SETTINGS = {
-  business_name: 'Bistro Digital',
+  business_name: 'Bistro Restaurante',
   business_nit: '',
   business_address: '',
-  business_phone: '',
+  business_phone: '3193475268',
   tax_name: 'Impoconsumo',
   tax_rate: '8',
   tax_included: '1',
   tip_rate: '10',
-  receipt_footer: '¡Gracias por su visita!',
+  receipt_footer: '¡Gracias por su visita! Síguenos en Instagram: @bistro_rest.ibg',
 };
-
-const SEED_MENU = [
-  ['Entradas', [
-    ['Empanadas de carne (3)', 12000],
-    ['Patacones con hogao', 14000],
-    ['Ceviche de camarón', 26000],
-    ['Sopa del día', 11000],
-  ]],
-  ['Platos fuertes', [
-    ['Bandeja paisa', 38000],
-    ['Mojarra frita', 36000],
-    ['Lomo al trapo', 46000],
-    ['Pechuga a la plancha', 29000],
-    ['Arroz con camarones', 39000],
-    ['Pasta al pesto', 28000],
-  ]],
-  ['Bebidas', [
-    ['Limonada de coco', 11000],
-    ['Jugo natural en agua', 8000],
-    ['Jugo natural en leche', 9500],
-    ['Gaseosa', 6000],
-    ['Cerveza nacional', 8500],
-    ['Agua', 4500],
-    ['Café tinto', 3500],
-  ]],
-  ['Postres', [
-    ['Tres leches', 12000],
-    ['Flan de caramelo', 10000],
-    ['Brownie con helado', 14000],
-  ]],
-];
-
-const SEED_ZONES = [
-  ['Salón', [['1', 2], ['2', 2], ['3', 4], ['4', 4], ['5', 4], ['6', 6], ['7', 6], ['8', 8]]],
-  ['Terraza', [['T1', 2], ['T2', 4], ['T3', 4], ['T4', 6]]],
-];
 
 function openDatabase(file) {
   if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -136,6 +102,12 @@ function openDatabase(file) {
   db.exec('PRAGMA foreign_keys = ON;');
   if (file !== ':memory:') db.exec('PRAGMA journal_mode = WAL;');
   db.exec(SCHEMA);
+
+  // Bases creadas con una versión anterior: se agregan las columnas nuevas sin tocar los datos.
+  const productColumns = db.prepare('PRAGMA table_info(products)').all().map((c) => c.name);
+  if (!productColumns.includes('description')) {
+    db.exec("ALTER TABLE products ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+  }
 
   const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
   for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) insertSetting.run(key, value);
@@ -147,15 +119,15 @@ function openDatabase(file) {
     db.exec('BEGIN');
     const zone = db.prepare('INSERT INTO zones (name, sort) VALUES (?, ?)');
     const table = db.prepare('INSERT INTO tables (zone_id, name, seats) VALUES (?, ?, ?)');
-    SEED_ZONES.forEach(([name, tables], i) => {
+    ZONES.forEach(([name, tables], i) => {
       const zoneId = zone.run(name, i).lastInsertRowid;
       for (const [tname, seats] of tables) table.run(zoneId, tname, seats);
     });
     const cat = db.prepare('INSERT INTO categories (name, sort) VALUES (?, ?)');
-    const prod = db.prepare('INSERT INTO products (category_id, name, price) VALUES (?, ?, ?)');
-    SEED_MENU.forEach(([name, products], i) => {
+    const prod = db.prepare('INSERT INTO products (category_id, name, price, description) VALUES (?, ?, ?, ?)');
+    MENU.forEach(([name, products], i) => {
       const catId = cat.run(name, i).lastInsertRowid;
-      for (const [pname, price] of products) prod.run(catId, pname, price);
+      for (const [pname, price, description] of products) prod.run(catId, pname, price, description || '');
     });
     db.exec('COMMIT');
   }

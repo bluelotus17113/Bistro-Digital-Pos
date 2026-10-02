@@ -5,7 +5,7 @@ Punto de venta para restaurante. Corre en un computador del local y se usa desde
 ## Qué hace
 
 - **Salón:** mesas por zonas, con su estado (libre, con cuenta abierta, pidió la cuenta), el valor acumulado y el tiempo que lleva abierta.
-- **Pedidos:** cuenta por mesa o para llevar, búsqueda en el menú, cantidades, notas para cocina, cambio de mesa y anulación con motivo.
+- **Pedidos:** cuenta por mesa o para llevar, búsqueda por nombre o ingrediente, cantidades, notas para cocina, cambio de mesa y anulación con motivo.
 - **Cobro:** impuesto (incluido en el precio o sumado), propina voluntaria, descuento en porcentaje o en pesos, pago en efectivo, tarjeta, transferencia o mixto, y cálculo del vuelto.
 - **Recibo:** precuenta y recibo en formato de tirilla de 80 mm, listos para imprimir.
 - **Ventas:** resumen por rango de fechas, recaudo por método de pago y productos más vendidos.
@@ -23,7 +23,9 @@ npm start
 
 Al arrancar muestra dos direcciones: `http://localhost:3000` para el equipo donde corre y la dirección de red local (por ejemplo `http://192.168.1.20:3000`) para abrirlo desde otros dispositivos de la misma wifi.
 
-La primera vez se crea la base de datos con un menú y unas mesas de ejemplo, que se pueden cambiar en **Menú** y **Ajustes**.
+La primera vez se crea la base de datos con la carta de Bistro Restaurante (53 productos en 10 categorías, con sus ingredientes) y las mesas del local: 9 en el interior y 5 en el exterior. Todo se puede cambiar después en **Menú** y **Ajustes**; la carta inicial está en `server/seed.js`.
+
+Si ya habías arrancado una versión anterior, la carta nueva no reemplaza tu base de datos. Para empezar de cero, detén el servidor y borra la carpeta `data`.
 
 | Variable | Para qué sirve | Valor por defecto |
 |---|---|---|

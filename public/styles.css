@@ -173,7 +173,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--botella); }
 .order-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .order-top h1 { font-size: 1.5rem; flex: 1; min-width: 0; }
 .order-top .chip { font-size: 0.85rem; font-weight: 650; padding: 4px 10px; border-radius: 999px; background: var(--tomate); color: #fff; }
-.cats { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: thin; }
+.cats { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 12px; }
 .cat {
   border: 1.5px solid var(--linea);
   background: var(--superficie);
@@ -185,7 +185,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--botella); }
 }
 .cat.is-current { background: var(--botella); border-color: var(--botella); color: #fff; }
 .search { margin-bottom: 12px; }
-.products { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; align-content: start; padding: 10px 10px 22px 0; }
+.products-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 10px 22px 0; }
+/* La rejilla va dentro de un contenedor con desplazamiento para que las filas tomen el alto de su contenido. */
+.products { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 10px; align-items: stretch; }
 .product {
   border: 1.5px solid var(--linea);
   background: #fff;
@@ -202,7 +204,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--botella); }
 .product:hover { border-color: var(--botella); }
 .product:active { background: var(--mostaza-2); }
 .product .pname { font-weight: 600; line-height: 1.2; }
-.product .pprice { color: var(--tinta-2); }
+.product .pname { display: block; }
+.product .pdesc {
+  display: block;
+  font-size: 0.8rem; line-height: 1.25; color: var(--tinta-2); margin-top: 4px;
+}
+.product .pprice { color: var(--tinta); font-weight: 650; }
 .product .badge {
   position: absolute; top: -8px; right: -8px;
   background: var(--botella); color: #fff; font-weight: 700; font-size: 0.85rem;
@@ -334,9 +341,13 @@ table.grid td.r, table.grid th.r { text-align: right; }
   .rail-link svg { width: 22px; height: 22px; }
   .view { padding: 18px 16px 28px; }
   h1 { font-size: 1.45rem; }
-  .order { grid-template-columns: 1fr; position: relative; }
-  .order-menu { padding: 14px 16px 0; }
-  .products { padding-bottom: 86px; }
+  .order { grid-template-columns: minmax(0, 1fr); position: relative; }
+  .order-menu { padding: 14px 16px 0; min-width: 0; }
+  /* En celular las categorías van en una sola fila que se desliza, para dejarle espacio a los productos. */
+  .cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -16px; padding-right: 16px; }
+  .cats::-webkit-scrollbar { display: none; }
+  .products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .products-scroll { padding: 10px 0 92px; }
   .dlg-actions .btn { flex: 1 1 auto; }
   .order-side { display: none; position: absolute; inset: 0; z-index: 5; border-left: 0; }
   .order.show-ticket .order-side { display: flex; }

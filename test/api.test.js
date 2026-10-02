@@ -29,10 +29,16 @@ async function api(method, url, body) {
 
 test('flujo completo: abrir mesa, pedir, cobrar y exportar', async () => {
   const boot = (await api('GET', '/api/bootstrap')).data;
-  assert.ok(boot.tables.length >= 8);
+  assert.deepEqual(boot.zones.map((z) => z.name), ['Interior', 'Exterior']);
+  assert.equal(boot.tables.filter((t) => t.zone_id === boot.zones[0].id).length, 9);
+  assert.equal(boot.tables.filter((t) => t.zone_id === boot.zones[1].id).length, 5);
+  assert.equal(boot.categories.length, 10);
+  assert.equal(boot.products.length, 53);
+  assert.equal(boot.products.find((p) => p.name === 'Salchipapa Explosión').price, 52000);
+  assert.match(boot.products.find((p) => p.name === 'Hamburguesa Paro Cardiaco').description, /huevo frito/);
   const mesa = boot.tables[0];
-  const bandeja = boot.products.find((p) => p.name === 'Bandeja paisa');
-  const cerveza = boot.products.find((p) => p.name === 'Cerveza nacional');
+  const parrillada = boot.products.find((p) => p.name === 'Parrillada');
+  const cerveza = boot.products.find((p) => p.name === 'Cerveza');
 
   let r = await api('POST', '/api/orders', { table_id: mesa.id });
   assert.equal(r.status, 201);
@@ -43,23 +49,22 @@ test('flujo completo: abrir mesa, pedir, cobrar y exportar', async () => {
   assert.equal(r.status, 200);
   assert.equal(r.data.id, orderId);
 
-  await api('POST', `/api/orders/${orderId}/items`, { product_id: bandeja.id, qty: 2 });
+  await api('POST', `/api/orders/${orderId}/items`, { product_id: parrillada.id, qty: 2 });
   await api('POST', `/api/orders/${orderId}/items`, { product_id: cerveza.id });
   r = await api('POST', `/api/orders/${orderId}/items`, { product_id: cerveza.id });
   assert.equal(r.data.items.length, 2, 'el mismo producto sin nota se agrupa');
-  r = await api('POST', `/api/orders/${orderId}/items`, { product_id: bandeja.id, note: 'Sin chicharrón' });
+  r = await api('POST', `/api/orders/${orderId}/items`, { product_id: parrillada.id, note: 'Sin chorizo' });
   assert.equal(r.data.items.length, 3, 'con nota va en otra línea');
-  assert.equal(r.data.totals.gross, 38000 * 3 + 8500 * 2);
+  assert.equal(r.data.totals.gross, 40000 * 3 + 5000 * 2);
 
   const salon = (await api('GET', '/api/salon')).data;
   assert.equal(salon.orders.length, 1);
-  assert.equal(salon.orders[0].gross, 131000);
+  assert.equal(salon.orders[0].gross, 130000);
 
   r = await api('PATCH', `/api/orders/${orderId}`, { status: 'por_cobrar', discount_type: 'pct', discount_value: 10 });
   assert.equal(r.data.status, 'por_cobrar');
-  assert.equal(r.data.totals.discount, 13100);
-  const total = r.data.totals.total; // 117.900
-  assert.equal(total, 117900);
+  assert.equal(r.data.totals.discount, 13000);
+  assert.equal(r.data.totals.total, 117000);
 
   // Pago insuficiente
   r = await api('POST', `/api/orders/${orderId}/pay`, { tip: 10000, payments: [{ method: 'efectivo', amount: 100000 }] });
@@ -76,11 +81,11 @@ test('flujo completo: abrir mesa, pedir, cobrar y exportar', async () => {
   assert.equal(r.status, 200);
   assert.equal(r.data.status, 'pagada');
   assert.equal(r.data.number, 1);
-  assert.equal(r.data.totals.total, 127900);
+  assert.equal(r.data.totals.total, 127000);
   const cash = r.data.payments.find((p) => p.method === 'efectivo');
   assert.equal(cash.received, 80000);
-  assert.equal(cash.amount, 77900);
-  assert.equal(cash.change, 2100);
+  assert.equal(cash.amount, 77000);
+  assert.equal(cash.change, 3000);
 
   // Ya cerrada: no se modifica
   r = await api('POST', `/api/orders/${orderId}/items`, { product_id: cerveza.id });
@@ -91,10 +96,10 @@ test('flujo completo: abrir mesa, pedir, cobrar y exportar', async () => {
 
   const sales = (await api('GET', '/api/sales')).data;
   assert.equal(sales.summary.count, 1);
-  assert.equal(sales.summary.total, 127900);
+  assert.equal(sales.summary.total, 127000);
   assert.equal(sales.summary.tip, 10000);
   assert.equal(sales.summary.byMethod.tarjeta, 50000);
-  assert.equal(sales.summary.byMethod.efectivo, 77900);
+  assert.equal(sales.summary.byMethod.efectivo, 77000);
 
   const res = await fetch(`${base}/api/export`);
   assert.equal(res.status, 200);
@@ -103,18 +108,18 @@ test('flujo completo: abrir mesa, pedir, cobrar y exportar', async () => {
   assert.deepEqual(wb.worksheets.map((w) => w.name), ['Resumen', 'Ventas', 'Detalle', 'Pagos', 'Productos']);
   assert.equal(wb.getWorksheet('Ventas').rowCount, 2);
   assert.equal(wb.getWorksheet('Detalle').rowCount, 4);
-  assert.equal(wb.getWorksheet('Ventas').getRow(2).getCell(14).value, 127900);
+  assert.equal(wb.getWorksheet('Ventas').getRow(2).getCell(14).value, 127000);
 
   const recibo = await fetch(`${base}/recibo/${orderId}`);
   const html = await recibo.text();
   assert.match(html, /Venta N\.° 1/);
-  assert.match(html, /Sin chicharrón/);
+  assert.match(html, /Sin chorizo/);
 });
 
 test('para llevar, cambio de mesa y anulación', async () => {
   const boot = (await api('GET', '/api/bootstrap')).data;
   const [m1, m2] = boot.tables;
-  const cafe = boot.products.find((p) => p.name === 'Café tinto');
+  const cafe = boot.products.find((p) => p.name === 'Agua');
 
   let r = await api('POST', '/api/orders', { type: 'llevar', label: 'Camila' });
   assert.equal(r.status, 201);
@@ -150,8 +155,9 @@ test('para llevar, cambio de mesa y anulación', async () => {
 test('administración de menú, mesas y ajustes', async () => {
   let r = await api('POST', '/api/categories', { name: 'Cocteles' });
   const catId = r.data.id;
-  r = await api('POST', '/api/products', { category_id: catId, name: 'Mojito', price: 22000 });
+  r = await api('POST', '/api/products', { category_id: catId, name: 'Mojito', price: 22000, description: 'Ron, hierbabuena y limón' });
   assert.equal(r.status, 201);
+  assert.equal(r.data.description, 'Ron, hierbabuena y limón');
   const prodId = r.data.id;
   r = await api('POST', '/api/products', { category_id: catId, name: '', price: 100 });
   assert.equal(r.status, 400);
