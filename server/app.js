@@ -219,6 +219,7 @@ function createApp(db) {
   });
 
   app.get('/api/salon', (req, res) => {
+    const pendingNotes = db.prepare('SELECT COUNT(*) AS n FROM notes WHERE done = 0').get().n;
     const open = db.prepare(`
       SELECT o.id, o.type, o.table_id, o.label, o.note, o.status, o.opened_at,
              COALESCE(SUM(i.qty), 0) AS item_count,
@@ -228,7 +229,7 @@ function createApp(db) {
       WHERE o.status IN ('abierta', 'por_cobrar')
       GROUP BY o.id
       ORDER BY o.opened_at`).all();
-    res.json({ orders: open });
+    res.json({ orders: open, pending_notes: pendingNotes });
   });
 
   app.put('/api/settings', (req, res) => {
@@ -566,6 +567,40 @@ function createApp(db) {
       return false;
     });
     res.json({ ok: true, removed });
+  });
+
+  // ---------- notas de caja y administración ----------
+  const listNotes = () => db.prepare('SELECT * FROM notes ORDER BY done, created_at DESC, id DESC').all();
+
+  function noteBody(value) {
+    const body = String(value ?? '').replace(/\r\n/g, '\n').trim();
+    if (!body) throw new HttpError(400, 'Escribe el texto de la nota.');
+    if (body.length > 600) throw new HttpError(400, 'La nota no puede tener más de 600 caracteres.');
+    return body;
+  }
+
+  app.get('/api/notes', (req, res) => {
+    res.json({ notes: listNotes() });
+  });
+
+  app.post('/api/notes', (req, res) => {
+    const at = now();
+    db.prepare('INSERT INTO notes (body, created_at, updated_at) VALUES (?, ?, ?)').run(noteBody(req.body?.body), at, at);
+    res.status(201).json({ notes: listNotes() });
+  });
+
+  app.patch('/api/notes/:id', (req, res) => {
+    const id = idParam(req);
+    const b = req.body || {};
+    if (!db.prepare('SELECT id FROM notes WHERE id = ?').get(id)) throw new HttpError(404, 'Esa nota ya no existe.');
+    if (b.body !== undefined) db.prepare('UPDATE notes SET body = ?, updated_at = ? WHERE id = ?').run(noteBody(b.body), now(), id);
+    if (b.done !== undefined) db.prepare('UPDATE notes SET done = ?, updated_at = ? WHERE id = ?').run(b.done ? 1 : 0, now(), id);
+    res.json({ notes: listNotes() });
+  });
+
+  app.delete('/api/notes/:id', (req, res) => {
+    db.prepare('DELETE FROM notes WHERE id = ?').run(idParam(req));
+    res.json({ notes: listNotes() });
   });
 
   // ---------- ventas, exportación y recibo ----------

@@ -8,6 +8,7 @@ Punto de venta para restaurante. Corre en un computador del local y se usa desde
 - **Pedidos:** cuenta por mesa o para llevar, búsqueda por nombre o ingrediente, cantidades, notas por producto y nota general de la cuenta, cambio de mesa y anulación con motivo.
 - **Cobro:** impuesto (incluido en el precio o sumado), propina voluntaria, descuento en porcentaje o en pesos, pago en efectivo, tarjeta, transferencia (Nequi) o mixto, y cálculo del vuelto.
 - **Recibo:** precuenta y recibo en formato de tirilla de 80 mm, listos para imprimir.
+- **Notas:** tablero de recordatorios para caja y administración, con pendientes, hechas y contador en el menú lateral.
 - **Ventas:** resumen por rango de fechas, recaudo por método de pago y productos más vendidos.
 - **Exportación a Excel:** un libro con las hojas Resumen, Ventas, Detalle, Pagos y Productos.
 - **Administración:** menú (categorías y productos), zonas, mesas, datos del negocio, impuesto y propina.

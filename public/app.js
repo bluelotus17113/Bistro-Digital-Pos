@@ -99,6 +99,13 @@ async function loadBoot() {
   return state.boot;
 }
 
+function setNotesCount(n) {
+  const el = document.getElementById('notes-count');
+  el.hidden = !n;
+  el.textContent = n > 99 ? '99+' : String(n || '');
+  el.setAttribute('aria-label', n === 1 ? '1 nota pendiente' : `${n} notas pendientes`);
+}
+
 // ---------- diálogos ----------
 function openDialog(build) {
   const dialog = h('dialog');
@@ -134,6 +141,9 @@ function formDialog({ title, fields, submitLabel, onSubmit }) {
         if (f.type === 'select') {
           input = h('select', { name: f.name },
             f.options.map((o) => h('option', { value: o.value, selected: String(o.value) === String(f.value) }, o.label)));
+        } else if (f.type === 'textarea') {
+          input = h('textarea', { name: f.name, maxlength: f.maxlength || null, rows: 5 });
+          input.value = f.value ?? '';
         } else {
           input = h('input', {
             type: 'text',
@@ -242,6 +252,7 @@ async function viewSalon(isCurrent) {
     try {
       const data = await api('GET', '/api/salon');
       if (!isCurrent()) return;
+      setNotesCount(data.pending_notes);
       // La clave incluye el minuto para que el tiempo transcurrido se actualice solo.
       const json = JSON.stringify(data.orders) + Math.floor(Date.now() / 60000);
       if (json !== lastJson) { lastJson = json; render(data.orders); }
@@ -679,6 +690,69 @@ async function viewSales(isCurrent) {
   await load();
 }
 
+// ---------- notas ----------
+async function viewNotes(isCurrent) {
+  if (!state.boot) await loadBoot();
+  const $list = h('div');
+  const $text = h('textarea', {
+    maxlength: 600, 'aria-label': 'Nueva nota',
+    placeholder: 'Por ejemplo: pedir gaseosas al proveedor, la mesa 4 dejó un abono de $ 20.000, falta cambio en caja',
+  });
+
+  const render = (notes) => {
+    if (!isCurrent()) return;
+    const pending = notes.filter((n) => !n.done);
+    const done = notes.filter((n) => n.done);
+    setNotesCount(pending.length);
+    const act = (fn) => async () => { const data = await attempt(fn); if (data) render(data.notes); };
+    const card = (n) => h('article', { class: `note${n.done ? ' is-done' : ''}` },
+      h('p', { class: 'body' }, n.body),
+      h('p', { class: 'when' }, `${n.done ? 'Hecha' : 'Escrita'} el ${dayAndClock(n.done ? n.updated_at : n.created_at)}`),
+      h('div', { class: 'tools' },
+        h('button', { class: 'btn small quiet', onclick: act(() => api('PATCH', `/api/notes/${n.id}`, { done: !n.done })) }, n.done ? 'Volver a pendiente' : 'Marcar como hecha'),
+        !n.done && h('button', {
+          class: 'btn small quiet',
+          onclick: async () => {
+            const data = await formDialog({
+              title: 'Editar nota',
+              fields: [{ name: 'body', label: 'Texto de la nota', type: 'textarea', value: n.body, maxlength: 600 }],
+              submitLabel: 'Guardar cambios',
+              onSubmit: (v) => api('PATCH', `/api/notes/${n.id}`, { body: v.body }),
+            });
+            if (data) render(data.notes);
+          },
+        }, 'Editar'),
+        h('button', {
+          class: 'btn small quiet',
+          onclick: async () => {
+            if (!(await confirmDialog({ title: 'Borrar esta nota', text: 'No se puede recuperar después.', confirmLabel: 'Borrar nota', danger: true }))) return;
+            const data = await attempt(() => api('DELETE', `/api/notes/${n.id}`));
+            if (data) render(data.notes);
+          },
+        }, 'Borrar')));
+    fill($list,
+      pending.length
+        ? h('div', { class: 'notes' }, pending.map(card))
+        : h('p', { class: 'empty', style: 'max-width:760px' }, 'No hay notas pendientes. Escribe arriba lo que caja o administración deban recordar.'),
+      done.length > 0 && [h('h2', { class: 'notes-sub' }, 'Hechas'), h('div', { class: 'notes' }, done.map(card))]);
+  };
+
+  const save = async () => {
+    const body = $text.value.trim();
+    if (!body) { toast('Escribe el texto de la nota.', true); $text.focus(); return; }
+    const data = await attempt(() => api('POST', '/api/notes', { body }));
+    if (data) { $text.value = ''; render(data.notes); toast('Nota guardada'); }
+  };
+
+  fill($view,
+    h('div', { class: 'page-head' },
+      h('div', null, h('h1', null, 'Notas'), h('p', { class: 'sub' }, 'Recordatorios de caja y administración. Las ve todo el que abra el POS.'))),
+    h('div', { class: 'note-new' }, $text, h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: save }, 'Guardar nota'))),
+    $list);
+  const data = await attempt(() => api('GET', '/api/notes'));
+  if (data) render(data.notes);
+}
+
 // ---------- menú ----------
 async function viewMenu(isCurrent) {
   const reload = async () => {
@@ -846,6 +920,7 @@ async function route() {
   try {
     if (name === 'pedido' && Number(arg) > 0) await viewOrder(isCurrent, Number(arg));
     else if (name === 'ventas') await viewSales(isCurrent);
+    else if (name === 'notas') await viewNotes(isCurrent);
     else if (name === 'menu') await viewMenu(isCurrent);
     else if (name === 'ajustes') await viewSettings(isCurrent);
     else await viewSalon(isCurrent);
@@ -855,4 +930,6 @@ async function route() {
 }
 
 window.addEventListener('hashchange', route);
+// El contador de notas pendientes se muestra en cualquier pantalla, no solo en el salón.
+api('GET', '/api/salon').then((d) => setNotesCount(d.pending_notes)).catch(() => {});
 route();

@@ -85,6 +85,12 @@ button { cursor: pointer; }
   font-size: 0.82rem;
   font-weight: 550;
 }
+.rail-link { position: relative; }
+.rail-count {
+  position: absolute; top: 4px; right: 12px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+  background: var(--mostaza); color: var(--tinta); font-size: 0.75rem; font-weight: 750; display: grid; place-items: center;
+}
+.rail-count[hidden] { display: none; }
 .rail-link svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .rail-link:hover { background: var(--botella-2); color: #fff; }
 .rail-link.is-current { background: var(--mantel); color: var(--botella); }
@@ -314,6 +320,22 @@ table.grid td.r, table.grid th.r { text-align: right; }
 .tag.bad { background: #f6d9d4; color: #8e2416; }
 .scroll-x { overflow-x: auto; }
 
+/* ---------- notas ---------- */
+.note-new { display: grid; gap: 10px; margin-bottom: 24px; max-width: 760px; }
+textarea { resize: vertical; min-height: 92px; line-height: 1.4; }
+.notes { display: grid; gap: 12px; max-width: 760px; }
+.note {
+  background: var(--mostaza-2); border-left: 6px solid var(--mostaza); border-radius: 4px var(--radio) var(--radio) 4px;
+  padding: 14px 16px 8px;
+}
+.note .body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.05rem; line-height: 1.4; }
+.note .when { color: #5b4706; font-size: 0.85rem; margin-top: 8px; }
+.note .tools { display: flex; gap: 4px; flex-wrap: wrap; margin: 4px 0 0 -6px; }
+.note.is-done { background: var(--superficie); border-left-color: var(--linea); outline: 1.5px solid var(--linea); outline-offset: -1.5px; }
+.note.is-done .body { text-decoration: line-through; color: var(--tinta-2); }
+.note.is-done .when { color: var(--tinta-2); }
+.notes-sub { margin: 26px 0 12px; color: var(--tinta-2); font-weight: 600; }
+
 /* ---------- administración ---------- */
 .panel { background: var(--superficie); border: 1.5px solid var(--linea); border-radius: var(--radio); padding: 18px; margin-bottom: 20px; }
 .panel > h2 { margin-bottom: 14px; }
@@ -342,6 +364,7 @@ table.grid td.r, table.grid th.r { text-align: right; }
   .brand { display: none; }
   .rail-link { flex: 1; padding: 6px 2px; font-size: 0.76rem; }
   .rail-link svg { width: 22px; height: 22px; }
+  .rail-count { top: 2px; right: calc(50% - 26px); }
   .view { padding: 18px 16px 28px; }
   h1 { font-size: 1.45rem; }
   .order { grid-template-columns: minmax(0, 1fr); position: relative; }

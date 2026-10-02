@@ -159,6 +159,27 @@ test('para llevar, cambio de mesa y anulación', async () => {
   assert.equal(sales.summary.cancelled, 1);
 });
 
+test('notas de caja y administración', async () => {
+  let r = await api('POST', '/api/notes', { body: '   ' });
+  assert.equal(r.status, 400);
+  r = await api('POST', '/api/notes', { body: 'Pedir gaseosas al proveedor' });
+  assert.equal(r.status, 201);
+  r = await api('POST', '/api/notes', { body: 'Falta cambio en caja\nTraer monedas' });
+  assert.equal(r.data.notes.length, 2);
+  const first = r.data.notes.find((n) => n.body.startsWith('Pedir'));
+  assert.equal((await api('GET', '/api/salon')).data.pending_notes, 2);
+
+  r = await api('PATCH', `/api/notes/${first.id}`, { done: true });
+  assert.equal(r.data.notes.at(-1).id, first.id, 'las hechas van al final');
+  assert.equal((await api('GET', '/api/salon')).data.pending_notes, 1);
+  r = await api('PATCH', `/api/notes/${first.id}`, { body: 'Pedir gaseosas y agua' });
+  assert.equal(r.data.notes.at(-1).body, 'Pedir gaseosas y agua');
+  r = await api('PATCH', '/api/notes/9999', { done: true });
+  assert.equal(r.status, 404);
+  r = await api('DELETE', `/api/notes/${first.id}`);
+  assert.equal(r.data.notes.length, 1);
+});
+
 test('administración de menú, mesas y ajustes', async () => {
   let r = await api('POST', '/api/categories', { name: 'Cocteles' });
   const catId = r.data.id;
