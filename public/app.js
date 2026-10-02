@@ -276,7 +276,7 @@ async function viewOrder(isCurrent, orderId) {
     return;
   }
   if (!isCurrent()) return;
-  const boot = state.boot;
+  let boot = state.boot;
   if (!order.is_open) {
     fill($view,
       h('div', { class: 'page-head' }, h('h1', null, order.status === 'pagada' ? `Venta N.° ${order.number}` : 'Cuenta anulada')),
@@ -308,8 +308,21 @@ async function viewOrder(isCurrent, orderId) {
 
   const update = (next) => { if (next) { order = next; renderAll(); } };
 
-  const addProduct = (p) => attempt(() => api('POST', `/api/orders/${order.id}/items`, { product_id: p.id })).then(update);
-  const setQty = (item, qty) => attempt(() => api('PATCH', `/api/orders/${order.id}/items/${item.id}`, { qty })).then(update);
+  // Si otro dispositivo cambió el menú (por ejemplo, marcó algo como no disponible), se vuelve a cargar.
+  const refreshMenu = async () => {
+    await attempt(loadBoot);
+    boot = state.boot;
+    renderCats();
+    renderProducts();
+  };
+  const addProduct = async (p) => {
+    const next = await attempt(() => api('POST', `/api/orders/${order.id}/items`, { product_id: p.id }));
+    if (next) update(next); else refreshMenu();
+  };
+  const setQty = async (item, qty) => {
+    const next = await attempt(() => api('PATCH', `/api/orders/${order.id}/items/${item.id}`, { qty }));
+    if (next) update(next); else refreshMenu();
+  };
 
   const editNote = async (item) => {
     const next = await formDialog({
@@ -401,8 +414,11 @@ async function viewOrder(isCurrent, orderId) {
       ? boot.products.filter((p) => `${p.name} ${p.description || ''}`.toLowerCase().includes(query))
       : boot.products.filter((p) => p.category_id === category);
     fill($products, list.length
-      ? list.map((p) => h('button', { class: 'product', onclick: () => addProduct(p) },
+      ? list.map((p) => h('button', {
+        class: `product${p.available ? '' : ' is-out'}`, disabled: !p.available, onclick: () => addProduct(p),
+      },
         counts.get(p.id) && h('span', { class: 'badge num' }, counts.get(p.id)),
+        !p.available && h('span', { class: 'out-tag' }, 'No disponible'),
         h('span', null, h('span', { class: 'pname' }, p.name), p.description && h('span', { class: 'pdesc' }, p.description)),
         h('span', { class: 'pprice num' }, money(p.price))))
       : h('p', { class: 'empty' }, query
@@ -786,7 +802,11 @@ async function viewMenu(isCurrent) {
 
     fill($view,
       h('div', { class: 'page-head' },
-        h('div', null, h('h1', null, 'Menú'), h('p', { class: 'sub' }, 'Los cambios se ven de inmediato al tomar pedidos.')),
+        h('div', null, h('h1', null, 'Menú'), h('p', { class: 'sub' }, (() => {
+          const out = boot.products.filter((p) => !p.available).length;
+          if (!out) return 'Todos los productos están disponibles. Si algo se acaba, márcalo como no disponible.';
+          return out === 1 ? 'Hay 1 producto marcado como no disponible.' : `Hay ${out} productos marcados como no disponibles.`;
+        })())),
         h('button', { class: 'btn primary', onclick: () => categoryForm() }, 'Nueva categoría')),
       boot.categories.length === 0 && h('p', { class: 'empty' }, 'El menú está vacío. Crea una categoría para empezar a agregar productos.'),
       boot.categories.map((c) => {
@@ -798,9 +818,17 @@ async function viewMenu(isCurrent) {
             h('button', { class: 'btn small quiet', onclick: () => categoryForm(c) }, 'Renombrar'),
             h('button', { class: 'btn small quiet', onclick: () => remove(`/api/categories/${c.id}`, `Quitar la categoría ${c.name}`) }, 'Quitar')),
           h('div', { class: 'admin-list' }, products.length
-            ? products.map((p) => h('div', { class: 'admin-row' },
-              h('span', { class: 'grow' }, p.name, p.description && h('div', { class: 'muted' }, p.description)),
+            ? products.map((p) => h('div', { class: `admin-row${p.available ? '' : ' is-out'}` },
+              h('span', { class: 'grow' }, p.name, ' ', !p.available && h('span', { class: 'tag bad' }, 'No disponible'),
+                p.description && h('div', { class: 'muted' }, p.description)),
               h('strong', { class: 'num' }, money(p.price)),
+              h('button', {
+                class: `btn small ${p.available ? '' : 'primary'}`,
+                onclick: async () => {
+                  const ok = await attempt(() => api('PATCH', `/api/products/${p.id}/availability`, { available: !p.available }));
+                  if (ok) { toast(p.available ? `${p.name} quedó como no disponible` : `${p.name} vuelve a estar disponible`); reload(); }
+                },
+              }, p.available ? 'Marcar no disponible' : 'Marcar disponible'),
               h('button', { class: 'btn small quiet', onclick: () => productForm(p) }, 'Editar'),
               h('button', { class: 'btn small quiet', onclick: () => remove(`/api/products/${p.id}`, `Quitar ${p.name} del menú`, 'Las ventas ya registradas con este producto no cambian.') }, 'Quitar')))
             : h('p', { class: 'muted', style: 'padding:10px 0' }, 'Sin productos todavía.')));

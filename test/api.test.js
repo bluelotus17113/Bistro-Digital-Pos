@@ -187,6 +187,26 @@ test('administración de menú, mesas y ajustes', async () => {
   assert.equal(r.status, 201);
   assert.equal(r.data.description, 'Ron, hierbabuena y limón');
   const prodId = r.data.id;
+  // Disponibilidad: no se puede vender lo que está marcado como no disponible.
+  r = await api('PATCH', `/api/products/${prodId}/availability`, { available: false });
+  assert.equal(r.data.available, 0);
+  r = await api('PATCH', `/api/products/${prodId}/availability`, { available: 'no' });
+  assert.equal(r.status, 400);
+  const mesa9 = (await api('GET', '/api/bootstrap')).data.tables[8];
+  const cuenta = (await api('POST', '/api/orders', { table_id: mesa9.id })).data;
+  r = await api('POST', `/api/orders/${cuenta.id}/items`, { product_id: prodId });
+  assert.equal(r.status, 409);
+  assert.match(r.data.error, /no disponible/);
+  await api('PATCH', `/api/products/${prodId}/availability`, { available: true });
+  r = await api('POST', `/api/orders/${cuenta.id}/items`, { product_id: prodId });
+  assert.equal(r.status, 201);
+  await api('PATCH', `/api/products/${prodId}/availability`, { available: false });
+  const linea = r.data.items[0];
+  r = await api('PATCH', `/api/orders/${cuenta.id}/items/${linea.id}`, { qty: 2 });
+  assert.equal(r.status, 409, 'no se aumenta la cantidad de algo no disponible');
+  r = await api('PATCH', `/api/orders/${cuenta.id}/items/${linea.id}`, { qty: 0 });
+  assert.equal(r.status, 200, 'sí se puede quitar');
+  await api('POST', `/api/orders/${cuenta.id}/cancel`, {});
   r = await api('POST', '/api/products', { category_id: catId, name: '', price: 100 });
   assert.equal(r.status, 400);
   r = await api('POST', '/api/products', { category_id: catId, name: 'X', price: -5 });

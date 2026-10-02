@@ -11,6 +11,7 @@ Punto de venta para restaurante. Corre en un computador del local y se usa desde
 - **Notas:** tablero de recordatorios para caja y administración, con pendientes, hechas y contador en el menú lateral.
 - **Ventas:** resumen por rango de fechas, recaudo por método de pago y productos más vendidos.
 - **Exportación a Excel:** un libro con las hojas Resumen, Ventas, Detalle, Pagos y Productos.
+- **Disponibilidad:** cada producto se puede marcar como no disponible cuando se acaba; queda bloqueado al tomar pedidos hasta que se reactive.
 - **Administración:** menú (categorías y productos), zonas, mesas, datos del negocio, impuesto y propina.
 
 ## Cómo usarlo

@@ -364,6 +364,15 @@ function createApp(db) {
     res.json({ id, category_id: p.categoryId, name: p.name, price: p.price, description: p.description });
   });
 
+  // Disponibilidad del día: un producto no disponible sigue en el menú, pero no se puede agregar a una cuenta.
+  app.patch('/api/products/:id/availability', (req, res) => {
+    const id = idParam(req);
+    if (typeof req.body?.available !== 'boolean') throw new HttpError(400, 'Indica si el producto está disponible.');
+    const r = db.prepare('UPDATE products SET available = ? WHERE id = ? AND active = 1').run(req.body.available ? 1 : 0, id);
+    if (!r.changes) throw new HttpError(404, 'Ese producto no existe.');
+    res.json({ id, available: req.body.available ? 1 : 0 });
+  });
+
   app.delete('/api/products/:id', (req, res) => {
     db.prepare('UPDATE products SET active = 0 WHERE id = ?').run(idParam(req));
     res.json({ ok: true });
@@ -445,6 +454,7 @@ function createApp(db) {
         SELECT p.*, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id
         WHERE p.id = ? AND p.active = 1`).get(productId);
       if (!product) throw new HttpError(404, 'Ese producto ya no está en el menú.');
+      if (!product.available) throw new HttpError(409, `${product.name} está marcado como no disponible.`);
       // Mismo producto sin nota: se suma a la línea existente.
       const same = note ? null : db.prepare(
         "SELECT id FROM order_items WHERE order_id = ? AND product_id = ? AND note = '' AND unit_price = ?",
@@ -471,6 +481,10 @@ function createApp(db) {
       if (!item) throw new HttpError(404, 'Ese producto ya no está en la cuenta.');
       if (b.qty !== undefined) {
         const qty = positiveInt(b.qty, 'La cantidad', { min: 0, max: 999 });
+        if (qty > item.qty) {
+          const product = db.prepare('SELECT name, available FROM products WHERE id = ?').get(item.product_id);
+          if (product && !product.available) throw new HttpError(409, `${product.name} está marcado como no disponible.`);
+        }
         if (qty === 0) db.prepare('DELETE FROM order_items WHERE id = ?').run(itemId);
         else db.prepare('UPDATE order_items SET qty = ? WHERE id = ?').run(qty, itemId);
       }

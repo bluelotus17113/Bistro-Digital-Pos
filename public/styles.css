@@ -216,6 +216,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--botella); }
   font-size: 0.8rem; line-height: 1.25; color: var(--tinta-2); margin-top: 4px;
 }
 .product .pprice { color: var(--tinta); font-weight: 650; }
+.product.is-out { background: #eef2ed; border-style: dashed; cursor: not-allowed; }
+.product.is-out .pname, .product.is-out .pdesc, .product.is-out .pprice { color: #8a968e; }
+.product.is-out .pname { text-decoration: line-through; }
+.product.is-out:hover { border-color: var(--linea); }
+.product .out-tag {
+  align-self: flex-start; order: -1; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  background: var(--tomate); color: #fff;
+}
 .product .badge {
   position: absolute; top: -8px; right: -8px;
   background: var(--botella); color: #fff; font-weight: 700; font-size: 0.85rem;
@@ -344,6 +352,7 @@ textarea { resize: vertical; min-height: 92px; line-height: 1.4; }
 .admin-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--linea); }
 .admin-row:last-child { border-bottom: 0; }
 .admin-row .grow { flex: 1; min-width: 0; }
+.admin-row.is-out .grow { color: var(--tinta-2); }
 .admin-row .muted { color: var(--tinta-2); font-size: 0.9rem; }
 .cat-block { margin-bottom: 18px; }
 .cat-block .cat-head { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--botella); }
@@ -385,6 +394,10 @@ textarea { resize: vertical; min-height: 92px; line-height: 1.4; }
   }
   .order.show-ticket .cart-bar { display: none; }
   .split { grid-template-columns: 1fr; }
+  .cat-block .cat-head { flex-wrap: wrap; gap: 6px; }
+  .cat-block .cat-head h2 { flex-basis: 100%; }
+  .admin-row { flex-wrap: wrap; }
+  .admin-row .grow { flex-basis: 60%; }
   .figure { border-right: 0; border-bottom: 1.5px solid var(--linea); }
   .paygrid { grid-template-columns: 112px 1fr auto; }
   .paygrid .mlabel { font-size: 0.92rem; line-height: 1.15; }

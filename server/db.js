@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   price INTEGER NOT NULL,
   description TEXT NOT NULL DEFAULT '',
+  available INTEGER NOT NULL DEFAULT 1,
   active INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS orders (
@@ -115,6 +116,9 @@ function openDatabase(file) {
   const productColumns = db.prepare('PRAGMA table_info(products)').all().map((c) => c.name);
   if (!productColumns.includes('description')) {
     db.exec("ALTER TABLE products ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+  }
+  if (!productColumns.includes('available')) {
+    db.exec('ALTER TABLE products ADD COLUMN available INTEGER NOT NULL DEFAULT 1');
   }
   const orderColumns = db.prepare('PRAGMA table_info(orders)').all().map((c) => c.name);
   if (!orderColumns.includes('note')) {
