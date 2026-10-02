@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS orders (
   type TEXT NOT NULL DEFAULT 'mesa',
   table_id INTEGER REFERENCES tables(id),
   label TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'abierta',
   discount_type TEXT NOT NULL DEFAULT 'ninguno',
   discount_value REAL NOT NULL DEFAULT 0,
@@ -107,6 +108,10 @@ function openDatabase(file) {
   const productColumns = db.prepare('PRAGMA table_info(products)').all().map((c) => c.name);
   if (!productColumns.includes('description')) {
     db.exec("ALTER TABLE products ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+  }
+  const orderColumns = db.prepare('PRAGMA table_info(orders)').all().map((c) => c.name);
+  if (!orderColumns.includes('note')) {
+    db.exec("ALTER TABLE orders ADD COLUMN note TEXT NOT NULL DEFAULT ''");
   }
 
   const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');

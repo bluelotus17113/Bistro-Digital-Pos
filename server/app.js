@@ -122,6 +122,7 @@ function createApp(db) {
       table_name: order.table_name,
       zone_name: order.zone_name,
       label: order.label,
+      note: order.note,
       status: order.status,
       is_open: isOpen,
       discount_type: order.discount_type,
@@ -219,7 +220,7 @@ function createApp(db) {
 
   app.get('/api/salon', (req, res) => {
     const open = db.prepare(`
-      SELECT o.id, o.type, o.table_id, o.label, o.status, o.opened_at,
+      SELECT o.id, o.type, o.table_id, o.label, o.note, o.status, o.opened_at,
              COALESCE(SUM(i.qty), 0) AS item_count,
              COALESCE(SUM(i.qty * i.unit_price), 0) AS gross
       FROM orders o
@@ -373,7 +374,8 @@ function createApp(db) {
     const result = tx(() => {
       if (b.type === 'llevar') {
         const label = text(b.label, 'Nombre', { required: false, max: 40 });
-        const id = db.prepare("INSERT INTO orders (type, label, opened_at) VALUES ('llevar', ?, ?)").run(label, now()).lastInsertRowid;
+        const note = text(b.note, 'La nota', { required: false, max: 200 });
+        const id = db.prepare("INSERT INTO orders (type, label, note, opened_at) VALUES ('llevar', ?, ?, ?)").run(label, note, now()).lastInsertRowid;
         return { id: Number(id), created: true };
       }
       const tableId = positiveInt(b.table_id, 'La mesa', { min: 1 });
@@ -402,6 +404,9 @@ function createApp(db) {
       }
       if (b.label !== undefined) {
         db.prepare('UPDATE orders SET label = ? WHERE id = ?').run(text(b.label, 'Nombre', { required: false, max: 40 }), id);
+      }
+      if (b.note !== undefined) {
+        db.prepare('UPDATE orders SET note = ? WHERE id = ?').run(text(b.note, 'La nota', { required: false, max: 200 }), id);
       }
       if (b.discount_type !== undefined) {
         const type = b.discount_type;

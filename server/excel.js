@@ -3,7 +3,7 @@
 const ExcelJS = require('exceljs');
 
 const MONEY = '#,##0';
-const METHOD_LABEL = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' };
+const METHOD_LABEL = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia (Nequi)' };
 const STATUS_LABEL = { pagada: 'Pagada', anulada: 'Anulada' };
 
 // Excel no maneja zonas horarias: se guarda la hora local "tal cual" para que la celda muestre la hora del negocio.
@@ -89,6 +89,7 @@ function buildWorkbook(data, settings) {
     { header: 'Propina', key: 'tip', width: 11, style: { numFmt: MONEY } },
     { header: 'Total', key: 'total', width: 13, style: { numFmt: MONEY } },
     { header: 'Motivo de anulación', key: 'reason', width: 30 },
+    { header: 'Nota de la cuenta', key: 'note', width: 34 },
   ];
   for (const o of data.orders) {
     ventas.addRow({
@@ -102,6 +103,7 @@ function buildWorkbook(data, settings) {
       gross: o.gross, discount: o.discount, discountLabel: discountLabel(o),
       base: o.base, tax: o.tax, tip: o.tip, total: o.total,
       reason: o.cancel_reason || '',
+      note: o.note || '',
     });
   }
   styleHeader(ventas);

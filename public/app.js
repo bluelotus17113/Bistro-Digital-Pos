@@ -2,7 +2,7 @@
 
 const $view = document.getElementById('view');
 const $toast = document.getElementById('toast');
-const METHOD_LABEL = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' };
+const METHOD_LABEL = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia (Nequi)' };
 
 const state = { boot: null, poll: null, renderId: 0 };
 
@@ -203,6 +203,7 @@ async function viewSalon(isCurrent) {
       h('div', { class: 'seats' }, seatsText)),
     order
       ? h('div', null,
+        order.note && h('div', { class: 'tile-note' }, order.note),
         h('div', { class: 'amount num' }, money(order.gross)),
         h('div', { class: 'state' }, order.status === 'por_cobrar' ? 'Pidió la cuenta' : `Hace ${elapsed(order.opened_at)}`))
       : h('div', { class: 'state seats' }, 'Libre'));
@@ -309,6 +310,19 @@ async function viewOrder(isCurrent, orderId) {
     update(next);
   };
 
+  const editOrderNote = async () => {
+    const next = await formDialog({
+      title: 'Nota de la cuenta',
+      fields: [{
+        name: 'note', label: 'Nota para toda la cuenta', value: order.note, maxlength: 200,
+        hint: 'Por ejemplo: cumpleaños, alergia al maní, pasan a recoger a las 7. Sale en la precuenta y el recibo',
+      }],
+      submitLabel: 'Guardar nota',
+      onSubmit: (v) => api('PATCH', `/api/orders/${order.id}`, { note: v.note }),
+    });
+    update(next);
+  };
+
   const moveTable = async () => {
     const salon = await attempt(() => api('GET', '/api/salon'));
     if (!salon) return;
@@ -397,7 +411,9 @@ async function viewOrder(isCurrent, orderId) {
       h('div', { class: 'ticket' },
         h('div', { class: 'ticket-head' },
           h('div', { class: 't1' }, title()),
-          h('div', { class: 't2' }, `Abierta a las ${clock(order.opened_at)}${order.zone_name ? `, ${order.zone_name}` : ''}`)),
+          h('div', { class: 't2' }, `Abierta a las ${clock(order.opened_at)}${order.zone_name ? `, ${order.zone_name}` : ''}`),
+          order.note && h('div', { class: 'ticket-note' }, `Nota: ${order.note}`),
+          h('button', { class: 'linkish ticket-note-btn', onclick: editOrderNote }, order.note ? 'Cambiar nota de la cuenta' : 'Agregar nota a la cuenta')),
         h('div', { class: 'ticket-items' },
           order.items.length
             ? order.items.map((it) => h('div', { class: 'line' },

@@ -1,6 +1,6 @@
 'use strict';
 
-const METHOD_LABEL = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' };
+const METHOD_LABEL = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia (Nequi)' };
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -105,6 +105,7 @@ function renderReceipt(order, settings, { print = false } = {}) {
     <p><span>${where}</span></p>
     <p><span>${paid || cancelled ? 'Cierre' : 'Apertura'}</span><span>${esc(dateTime(paid || cancelled ? order.closed_at : order.opened_at))}</span></p>
     ${cancelled ? `<p><span>Motivo: ${esc(order.cancel_reason)}</span></p>` : ''}
+    ${order.note ? `<p><span>Nota: ${esc(order.note)}</span></p>` : ''}
   </div>
   <table>${items}</table>
   <table class="totals">${totals.join('')}</table>

@@ -238,6 +238,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--botella); }
 .ticket-head { padding: 14px 16px 10px; border-bottom: 1px dashed #8d9790; }
 .ticket-head .t1 { font-weight: 700; font-size: 1.05rem; }
 .ticket-head .t2 { font-size: 0.86rem; color: #4d564f; }
+.ticket-note { margin-top: 8px; padding: 6px 8px; background: var(--mostaza-2); font-size: 0.9rem; font-weight: 700; overflow-wrap: anywhere; }
+.ticket-note-btn { font-family: var(--ui); padding: 8px 0 0; }
+.tile-note { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 6px 0 2px; }
 .ticket-items { flex: 1; overflow-y: auto; padding: 4px 16px; }
 .ticket-empty { padding: 26px 0; color: #4d564f; text-align: center; }
 .line { padding: 10px 0; border-bottom: 1px dotted #c3cbc4; }
@@ -280,7 +283,7 @@ dialog::backdrop { background: rgba(18, 53, 43, 0.55); }
 .seg button.is-current { background: var(--botella); border-color: var(--botella); color: #fff; }
 .block { display: grid; gap: 8px; }
 .block > .title { font-weight: 650; }
-.paygrid { display: grid; grid-template-columns: 120px 1fr auto; gap: 8px; align-items: center; }
+.paygrid { display: grid; grid-template-columns: 132px 1fr auto; gap: 8px; align-items: center; }
 .paygrid .mlabel { font-weight: 600; }
 .due { background: var(--botella); color: #fff; border-radius: var(--radio); padding: 14px 16px; display: grid; gap: 4px; }
 .due .big { font-size: 2rem; font-weight: 750; letter-spacing: -0.02em; line-height: 1.05; }
@@ -360,7 +363,8 @@ table.grid td.r, table.grid th.r { text-align: right; }
   .order.show-ticket .cart-bar { display: none; }
   .split { grid-template-columns: 1fr; }
   .figure { border-right: 0; border-bottom: 1.5px solid var(--linea); }
-  .paygrid { grid-template-columns: 104px 1fr auto; }
+  .paygrid { grid-template-columns: 112px 1fr auto; }
+  .paygrid .mlabel { font-size: 0.92rem; line-height: 1.15; }
   .tables { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px; }
 }
 @media (min-width: 901px) { .only-mobile { display: none !important; } }

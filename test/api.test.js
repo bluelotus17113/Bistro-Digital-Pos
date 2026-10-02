@@ -61,6 +61,10 @@ test('flujo completo: abrir mesa, pedir, cobrar y exportar', async () => {
   assert.equal(salon.orders.length, 1);
   assert.equal(salon.orders[0].gross, 130000);
 
+  r = await api('PATCH', `/api/orders/${orderId}`, { note: 'Cumpleaños, traer vela' });
+  assert.equal(r.data.note, 'Cumpleaños, traer vela');
+  r = await api('PATCH', `/api/orders/${orderId}`, { note: 'x'.repeat(201) });
+  assert.equal(r.status, 400);
   r = await api('PATCH', `/api/orders/${orderId}`, { status: 'por_cobrar', discount_type: 'pct', discount_value: 10 });
   assert.equal(r.data.status, 'por_cobrar');
   assert.equal(r.data.totals.discount, 13000);
@@ -114,6 +118,9 @@ test('flujo completo: abrir mesa, pedir, cobrar y exportar', async () => {
   const html = await recibo.text();
   assert.match(html, /Venta N\.° 1/);
   assert.match(html, /Sin chorizo/);
+  assert.match(html, /Nota: Cumpleaños, traer vela/);
+  assert.match(html, /Transferencia|Tarjeta/);
+  assert.equal(wb.getWorksheet('Ventas').getRow(2).getCell(16).value, 'Cumpleaños, traer vela');
 });
 
 test('para llevar, cambio de mesa y anulación', async () => {

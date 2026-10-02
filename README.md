@@ -5,8 +5,8 @@ Punto de venta para restaurante. Corre en un computador del local y se usa desde
 ## Qué hace
 
 - **Salón:** mesas por zonas, con su estado (libre, con cuenta abierta, pidió la cuenta), el valor acumulado y el tiempo que lleva abierta.
-- **Pedidos:** cuenta por mesa o para llevar, búsqueda por nombre o ingrediente, cantidades, notas para cocina, cambio de mesa y anulación con motivo.
-- **Cobro:** impuesto (incluido en el precio o sumado), propina voluntaria, descuento en porcentaje o en pesos, pago en efectivo, tarjeta, transferencia o mixto, y cálculo del vuelto.
+- **Pedidos:** cuenta por mesa o para llevar, búsqueda por nombre o ingrediente, cantidades, notas por producto y nota general de la cuenta, cambio de mesa y anulación con motivo.
+- **Cobro:** impuesto (incluido en el precio o sumado), propina voluntaria, descuento en porcentaje o en pesos, pago en efectivo, tarjeta, transferencia (Nequi) o mixto, y cálculo del vuelto.
 - **Recibo:** precuenta y recibo en formato de tirilla de 80 mm, listos para imprimir.
 - **Ventas:** resumen por rango de fechas, recaudo por método de pago y productos más vendidos.
 - **Exportación a Excel:** un libro con las hojas Resumen, Ventas, Detalle, Pagos y Productos.
