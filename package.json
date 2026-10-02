@@ -1,0 +1,19 @@
+{
+  "name": "bistro-digital-pos",
+  "version": "0.1.0",
+  "description": "Punto de venta para restaurante: mesas, pedidos, cobro, recibo y exportación a Excel",
+  "private": true,
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1"
+  }
+}
